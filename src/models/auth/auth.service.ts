@@ -14,7 +14,7 @@ export class AuthService {
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
     private jwtService: JwtService,
-  ) { }
+  ) {}
 
   hashPassword(password: string): Observable<string> {
     return from(bcrypt.hash(password, 12))
@@ -67,6 +67,7 @@ export class AuthService {
       switchMap((user: User) => {
         if (user) {
           // create JWT - credentials
+          console.log("zz", user)
           return from(this.jwtService.signAsync({ user }))
         }
       }),
@@ -82,34 +83,37 @@ export class AuthService {
           reset_token: resetToken,
         })
         const link = `${origin}/reset-password?token=${resetToken}`
-        sendEmail(user.username, "Password Reset Requested", link, user.name);
+        sendEmail(user.username, "Password Reset Requested", link, user.name)
       }
       function generateToken(): string {
-        return new Date().getTime().toString(16) + (Math.random().toString(16) + "000000000000000000").substr(2, 16);
+        return (
+          new Date().getTime().toString(16) +
+          (Math.random().toString(16) + "000000000000000000").substr(2, 16)
+        )
       }
+    } catch (error) {
+      console.log(error)
     }
-    catch (error) { console.log(error) }
     return "Password reset link sent to your email if the user exists"
   }
 
-  resetPassword(password: string, token: string): Promise<string> {
-    return this.userRepository.findOneOrFail({ reset_token: token })
-      .then(user => {
-        var pwd;
-        this.hashPassword(password).subscribe(hashedPassword => {
-          pwd = hashedPassword
-        })
-        console.log(pwd)
-        this.userRepository.save({
-          id: user.id,
-          password: pwd,
-          reset_token: null,
-        })
-        return "Password reset successfully"
+  async resetPassword(
+    id: number,
+    password: string,
+    token: string,
+  ): Promise<string> {
+    try {
+      const pwd = await bcrypt.hash(password, 12)
+      const user = await this.userRepository.findOneOrFail({
+        reset_token: token,
       })
-      .catch(error => {
-        console.log(error)
-        return "Password reset failed. Unable to find valid token. Please request a new password reset";
-      })
+      if (user) {
+        user.password = pwd
+        this.userRepository.save(user)
+        return "Password changed successfully."
+      }
+    } catch (error) {
+      console.log(error)
+    }
   }
 }
