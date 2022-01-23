@@ -1,0 +1,21 @@
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+ {
+    "name": "Sujina Maharjan",
+    "username": "suzimuji",
+    "password": "Pass@1234"
+}
+
+###
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+    "username": "suzimuji",
+    "password": "Pass@1234"
+}
+
+###
+GET http://localhost:3000/api/user
+Content-Type: application/json
